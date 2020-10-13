@@ -1,0 +1,53 @@
+require 'rails_helper'
+describe MoviesController do
+  describe 'Search movies by the same director' do
+    it 'should call Movie.similar_movies' do
+      expect(Movie).to receive(:similar_movies).with('Movie1')
+      get :movie_with_same_director, { title: 'Movie1' }
+    end
+
+    it 'Need to assign similar movies if director exists' do
+      movies = ['Movie2', 'Movie3']
+      Movie.stub(:similar_movies).with('Movie2').and_return(movies)
+      get :movie_with_same_director, { title: 'Movie2' }
+      expect(assigns(:similar_movies)).to eql(movies)
+    end
+
+    it "should redirect to home page if director isn't known" do
+      Movie.stub(:similar_movies).with('Movie3').and_return(nil)
+      get :movie_with_same_director, { title: 'Movie3' }
+      expect(response).to redirect_to(movies_path)
+    end
+ end
+
+ describe 'Delete movie' do
+    movie_params = {:title => 'random title', :director => 'random director', :rating => 'R', :description => 'random', :release_date => '17-Feb-1995'}
+    let!(:movie) {Movie.create(movie_params)}
+
+    it 'should set the flash' do
+      delete :destroy, {id: movie.id}
+      expect(flash[:notice]).to match(/deleted/)
+      expect(response).to redirect_to(movies_path)
+    end
+  end
+
+ describe 'Create Movie' do
+    movie_params = {:title => 'random title', :director => 'random director', :rating => 'R', :description => 'random', :release_date => '17-Feb-1995'}
+    let!(:movie) {Movie.create(movie_params)}
+
+    it 'should create a movie' do
+      expect(Movie).to receive(:create!).with(movie_params).and_return(movie)
+      post :create, movie: movie_params
+      expect(flash[:notice]).to match(/was successfully created/)
+      expect(response).to redirect_to(movies_path)
+    end
+  end
+
+ describe 'Get Index' do
+    it 'should get index' do
+      get :index
+      expect(response).to render_template('index')
+    end
+  end
+
+end
